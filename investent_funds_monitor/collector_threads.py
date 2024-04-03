@@ -1,4 +1,5 @@
 import os
+import threading
 
 import requests
 from parsel import Selector
@@ -15,6 +16,12 @@ class FIDailyInfCollector:
         html = Selector(text=response.text)
         return html
 
+    def __download_file(self, zip_url, filename):
+        with open(filename, "wb") as f:
+            zip_response = requests.get(zip_url)
+            f.write(zip_response.content)
+        print(f"--> File: {filename} downloaded.")
+
     def collect(self):
         html = self.__fetch()
         files_list = html.xpath('//pre/a[re:test(@href, "inf_diario")]/@href').getall()
@@ -22,24 +29,29 @@ class FIDailyInfCollector:
         if not os.path.exists(self.path):
             os.makedirs(self.path)
 
+        threads = []
         for file in files_list:
             zip_url = os.path.join(self.URL, file)
             filename = os.path.join(self.path, file)
+            thread = threading.Thread(
+                target=self.__download_file, args=(zip_url, filename)
+            )
+            thread.start()
+            threads.append(thread)
 
-            with open(filename, "wb") as f:
-                zip_response = requests.get(zip_url)
-                f.write(zip_response.content)
-            print(f"--> File: {file} downloaded.")
+        # Aguardar todas as threads concluírem
+        for thread in threads:
+            thread.join()
 
         downloads_total = len(os.listdir(self.path))
-        print(f"Total: {downloads_total}")
+        print(f"Total: {downloads_total} downloads.")
 
 
-# ----
+# ---
 
 
 def main():
-    path = "download"
+    path = "downloads"
     collector = FIDailyInfCollector(path)
     collector.collect()
 
