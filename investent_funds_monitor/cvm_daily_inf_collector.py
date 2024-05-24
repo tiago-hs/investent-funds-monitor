@@ -6,7 +6,7 @@ from parsel import Selector
 
 
 class CVMDailyInfCollector:
-    URL = 'https://dados.cvm.gov.br/dados/FI/DOC/INF_DIARIO/DADOS/'
+    URL = "https://dados.cvm.gov.br/dados/FI/DOC/INF_DIARIO/DADOS/"
 
     def __init__(self, path):
         self.path = path
@@ -17,16 +17,14 @@ class CVMDailyInfCollector:
         return html
 
     def _download_file(self, zip_url, filename):
-        with open(filename, 'wb') as f:
+        with open(filename, "wb") as f:
             zip_response = requests.get(zip_url)
             f.write(zip_response.content)
-        print(f'--> File: {filename} downloaded.')
+        print(f"--> File: {filename} downloaded.")
 
     def collect(self):
         html = self._fetch()
-        files_list = html.xpath(
-            '//pre/a[re:test(@href, "inf_diario")]/@href'
-        ).getall()
+        files_list = html.xpath('//pre/a[re:test(@href, "inf_diario")]/@href').getall()
 
         if not os.path.exists(self.path):
             os.makedirs(self.path)
@@ -46,17 +44,17 @@ class CVMDailyInfCollector:
             thread.join()
 
         downloads_total = len(os.listdir(self.path))
-        print(f'Total: {downloads_total} downloads.')
+        print(f"Total: {downloads_total} downloads.")
 
 
 # ---
 
 
 def main():
-    path = 'downloads'
+    path = "downloads"
     collector = CVMDailyInfCollector(path)
     collector.collect()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
