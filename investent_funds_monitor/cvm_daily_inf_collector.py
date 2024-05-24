@@ -1,3 +1,4 @@
+import json
 import os
 import threading
 
@@ -7,20 +8,33 @@ from parsel import Selector
 
 class CVMDailyInfCollector:
     URL = "https://dados.cvm.gov.br/dados/FI/DOC/INF_DIARIO/DADOS/"
+    DOWNLOAD_LOG_FILES = "download_log_file.json"
 
     def __init__(self, path):
         self.path = path
+        self.download_log_file = self._log_downloaded_files()
 
     def _fetch(self):
         response = requests.get(self.URL)
         html = Selector(text=response.text)
         return html
 
+    def _log_downloaded_files(self):
+        if os.path.exists(self.DOWNLOAD_LOG_FILES):
+            with open(self.DOWNLOAD_LOG_FILES, "r") as f:
+                return set(json.load(f))
+        return set()
+
+    def _save_downloaded_logs(self):
+        with open(self.DOWNLOAD_LOG_FILES, "w") as f:
+            json.dump(list(self.download_log_file), f)
+
     def _download_file(self, zip_url, filename):
         with open(filename, "wb") as f:
             zip_response = requests.get(zip_url)
             f.write(zip_response.content)
-        print(f"--> File: {filename} downloaded.")
+        print(f"--> File: {filename} downloaded")
+        self.download_log_file.add(os.path.basename(filename))
 
     def collect(self):
         html = self._fetch()
@@ -30,19 +44,24 @@ class CVMDailyInfCollector:
             os.makedirs(self.path)
 
         threads = []
+
         for file in files_list:
-            zip_url = os.path.join(self.URL, file)
-            filename = os.path.join(self.path, file)
-            thread = threading.Thread(
-                target=self._download_file, args=(zip_url, filename)
-            )
-            thread.start()
-            threads.append(thread)
+            if file not in self.download_log_file:
+                zip_url = os.path.join(self.URL, file)
+                filename = os.path.join(self.path, file)
+                thread = threading.Thread(
+                    target=self._download_file, args=(zip_url, filename)
+                )
+                thread.start()
+                threads.append(thread)
+            else:
+                print(f"--> File: {file} already exists, skipping download.")
 
         # Aguardar todas as threads concluírem
         for thread in threads:
             thread.join()
 
+        self._save_downloaded_logs()
         downloads_total = len(os.listdir(self.path))
         print(f"Total: {downloads_total} downloads.")
 
