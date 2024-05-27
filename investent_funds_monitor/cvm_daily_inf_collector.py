@@ -35,8 +35,10 @@ class CVMDailyInfCollector:
         zip_response = requests.get(zip_url)
         with ZipFile(BytesIO(zip_response.content)) as zfile:
             zfile.extractall(self.path)
-        print(f"--> File: {filename} downloaded")
-        self.download_log_file.add(os.path.basename(filename))
+            extracted_files = zfile.namelist()
+        for file in extracted_files:
+            print(f"--> File: {file} downloaded")
+            self.download_log_file.add(os.path.basename(file))
 
     def collect(self):
         html = self._fetch()
