@@ -1,6 +1,8 @@
+from io import BytesIO
 import json
 import os
 import threading
+from zipfile import ZipFile
 
 import requests
 from parsel import Selector
@@ -29,10 +31,10 @@ class CVMDailyInfCollector:
         with open(self.DOWNLOAD_LOG_FILES, "w") as f:
             json.dump(list(self.download_log_file), f)
 
-    def _download_file(self, zip_url, filename):
-        with open(filename, "wb") as f:
-            zip_response = requests.get(zip_url)
-            f.write(zip_response.content)
+    def _download_and_extract_files(self, zip_url, filename):
+        zip_response = requests.get(zip_url)
+        with ZipFile(BytesIO(zip_response.content)) as zfile:
+            zfile.extractall(self.path)
         print(f"--> File: {filename} downloaded")
         self.download_log_file.add(os.path.basename(filename))
 
@@ -50,7 +52,7 @@ class CVMDailyInfCollector:
                 zip_url = os.path.join(self.URL, file)
                 filename = os.path.join(self.path, file)
                 thread = threading.Thread(
-                    target=self._download_file, args=(zip_url, filename)
+                    target=self._download_and_extract_files, args=(zip_url, filename)
                 )
                 thread.start()
                 threads.append(thread)
