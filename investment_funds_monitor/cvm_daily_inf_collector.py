@@ -2,7 +2,7 @@ import json
 import os
 import threading
 from io import BytesIO
-from zipfile import ZipFile
+from zipfile import BadZipfile, ZipFile
 
 import requests
 from parsel import Selector
@@ -39,7 +39,6 @@ class CVMCollector:
         Returns:
             Selector: A Selector object containing the HTML content.
         """
-
         response = requests.get(self.url)
         html = Selector(text=response.text)
         return html
@@ -68,20 +67,41 @@ class CVMCollector:
         Args:
             zip_url (str): The URL of the zip file to download.
         """
-        response = requests.get(zfiles_url)
-        with ZipFile(BytesIO(response.content)) as zfiles:
-            zfiles.extractall(self.save_path)
-            zfiles_list = zfiles.namelist()  # Get the list name of the files
-        for zfile in zfiles_list:
-            breakpoint()
-            print(f"--> File: {zfile} downloaded")
-            self.download_log_file.add(os.path.basename(zfile))
+        try:
+            response = requests.head(zfiles_url)
+            response.raise_for_status()
+
+            with requests.get(zfiles_url) as download_response:
+                download_response.raise_for_status()
+
+                with ZipFile(BytesIO(requests.get(zfiles_url).content)) as files:
+                    files_to_extract = set(files.namelist())
+
+                    if files_to_extract.issubset(self.download_log_file):
+                        print(
+                            f"--> Files from {zfiles_url} already exists, skipping download."
+                        )
+                        return
+
+                    files.extractall(self.save_path)
+
+            for file in files_to_extract:
+                print(f"--> File: {file} downloaded")
+                self.download_log_file.add(file)
+
+        except requests.RequestException as e:
+            print(f"Error: downloading the file from {zfiles_url}: {e}")
+        except BadZipfile:
+            print(
+                f"Error: The downloaded file from {zfiles_url} is not valid zip file."
+            )
+        except Exception as e:
+            print(f"An unespected error ocurred while processing {zfiles_url}: {e}")
 
     def collect(self):
-        """Collects and extracts all new daily information files from the CVM repository."""
+        """Collects all new daily information files from the CVM repository."""
 
         html = self._fetch()
-        # files_list = html.xpath('//pre/a[re:test(@href, "inf_diario")]/@href').getall()
         zfiles_list = html.xpath(self.xpath_query).getall()
 
         if not os.path.exists(self.save_path):
@@ -90,16 +110,12 @@ class CVMCollector:
         threads = []
 
         for zfile in zfiles_list:
-            if zfile not in self.download_log_file:
-                zfiles_url = os.path.join(self.url, zfile)
-                # filename = os.path.join(self.save_path, zfile)
-                thread = threading.Thread(
-                    target=self._download_and_extract_files, args=(zfiles_url,)
-                )
-                thread.start()
-                threads.append(thread)
-            else:
-                print(f"--> File: {zfile} already exists, skipping download.")
+            zfiles_url = os.path.join(self.url, zfile)
+            thread = threading.Thread(
+                target=self._download_and_extract_files, args=(zfiles_url,)
+            )
+            thread.start()
+            threads.append(thread)
 
         for thread in threads:
             thread.join()
@@ -114,7 +130,7 @@ class CVMCollector:
 
 def main():
     save_path = "downloads"
-    xpath_query = '//pre/a[re:test(@href, "inf_diario")]/@href'
+    xpath_query = '//pre/a[contains(@href, "inf_diario_fi")]/@href'
     url = "https://dados.cvm.gov.br/dados/FI/DOC/INF_DIARIO/DADOS/"
 
     cvm_datasets = CVMCollector(save_path, url, xpath_query)
