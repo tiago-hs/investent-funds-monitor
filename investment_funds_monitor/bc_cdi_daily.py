@@ -4,7 +4,7 @@ import os
 import requests
 
 
-class BCDataCollector:
+class BCCollector:
     """Collects and saves JSON data from a specified URL.
 
     Attributes:
