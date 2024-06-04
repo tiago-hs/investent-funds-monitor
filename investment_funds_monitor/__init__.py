@@ -1,18 +1,31 @@
+from investment_funds_monitor.bc_cdi_daily import BCDataCollector
 from investment_funds_monitor.cvm_daily_inf_collector import CVMCollector
 
 
 def main():
-    save_path = "downloads"
-    query_daily_data = '//pre/a[contains(@href, "inf_diario_fi")]/@href'
-    query_data_hist = '//pre/a[contains(@href, "inf_diario_fi")]/@href'
-    daily_data_url = "https://dados.cvm.gov.br/dados/FI/DOC/INF_DIARIO/DADOS/"
-    hist_data_url = "https://dados.cvm.gov.br/dados/FI/DOC/INF_DIARIO/DADOS/HIST/"
+    cvm_save_path = "downloads"
+    bacen_save_path = "bacen_cdi/daily_cdi.json"
 
-    cvm_daily_datasets = CVMCollector(save_path, daily_data_url, query_daily_data)
-    cvm_hist_datasets = CVMCollector(save_path, hist_data_url, query_data_hist)
+    cvm_daily_data_url = "https://dados.cvm.gov.br/dados/FI/DOC/INF_DIARIO/DADOS/"
+    cvm_hist_data_url = "https://dados.cvm.gov.br/dados/FI/DOC/INF_DIARIO/DADOS/HIST/"
+    bacen_cdi_url = (
+        "https://api.bcb.gov.br/dados/serie/bcdata.sgs.12/dados?formato=json"
+    )
+
+    query_cvm_daily_data = '//pre/a[contains(@href, "inf_diario_fi")]/@href'
+    query_cvm_hist_data = '//pre/a[contains(@href, "inf_diario_fi")]/@href'
+
+    cvm_daily_datasets = CVMCollector(
+        cvm_save_path, cvm_daily_data_url, query_cvm_daily_data
+    )
+    cvm_hist_datasets = CVMCollector(
+        cvm_save_path, cvm_hist_data_url, query_cvm_hist_data
+    )
+    bacen_cdi_dataset = BCDataCollector(bacen_cdi_url, bacen_save_path)
 
     cvm_daily_datasets.collect()
     cvm_hist_datasets.collect()
+    bacen_cdi_dataset.collect()
 
 
 if __name__ == "__main__":
