@@ -5,6 +5,20 @@ import requests
 
 
 class BCDataCollector:
+    """Collects and saves JSON data from a specified URL.
+
+    Attributes:
+        url (str): The URL of the JSON data to collect.
+    save_path (str): The path to the local file where the JSON data will be saved.
+
+    Methods:
+        collect() - Fetches JSON data from the URL and saves it to the specified file.
+
+    Raises:
+        requests.exceptions.HTTPError: If an HTTP error occurs during the download.
+    Exception: If any other error occurs during the collection process.
+    """
+
     def __init__(self, url, save_path):
         self.url = url
         self.save_path = save_path
