@@ -123,20 +123,3 @@ class CVMCollector:
         self._save_downloaded_logs()
         downloads_total = len(os.listdir(self.save_path))
         print(f"Total: {downloads_total} downloads.")
-
-
-# ---
-
-
-def main():
-    save_path = "downloads"
-    xpath_query = '//pre/a[contains(@href, "inf_diario_fi")]/@href'
-    url = "https://dados.cvm.gov.br/dados/FI/DOC/INF_DIARIO/DADOS/"
-
-    cvm_datasets = CVMCollector(save_path, url, xpath_query)
-
-    cvm_datasets.collect()
-
-
-if __name__ == "__main__":
-    main()
