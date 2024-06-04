@@ -12,14 +12,13 @@ def main():
         "https://api.bcb.gov.br/dados/serie/bcdata.sgs.12/dados?formato=json"
     )
 
-    query_cvm_daily_data = '//pre/a[contains(@href, "inf_diario_fi")]/@href'
-    query_cvm_hist_data = '//pre/a[contains(@href, "inf_diario_fi")]/@href'
+    query_cvm_data = '//pre/a[contains(@href, "inf_diario_fi")]/@href'
 
     cvm_daily_datasets = CVMCollector(
-        cvm_save_path, cvm_daily_data_url, query_cvm_daily_data
+        cvm_save_path, cvm_daily_data_url, query_cvm_data
     )
     cvm_hist_datasets = CVMCollector(
-        cvm_save_path, cvm_hist_data_url, query_cvm_hist_data
+        cvm_save_path, cvm_hist_data_url, query_cvm_data 
     )
     bacen_cdi_dataset = BCDataCollector(bacen_cdi_url, bacen_save_path)
 
