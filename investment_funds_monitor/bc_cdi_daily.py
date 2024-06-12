@@ -9,13 +9,14 @@ class BCCollector:
 
     Attributes:
         url (str): The URL of the JSON data to collect.
-    save_path (str): The path to the local file where the JSON data will be saved.
+        save_path (str): The path to the local file where the JSON data will be saved.
 
     Methods:
         collect() - Fetches JSON data from the URL and saves it to the specified file.
 
     Raises:
         requests.exceptions.HTTPError: If an HTTP error occurs during the download.
+
     Exception: If any other error occurs during the collection process.
     """
 
@@ -25,18 +26,15 @@ class BCCollector:
 
     def collect(self):
         try:
-            # Faz a solicitação HTTP
             response = requests.get(self.url)
-            response.raise_for_status()  # Levanta um erro se o download falhar
+            response.raise_for_status()
 
-            # Extrai o conteúdo JSON da resposta
             data = response.json()
             diretory = os.path.dirname(self.save_path)
 
             if diretory and not os.path.exists(self.save_path):
                 os.makedirs(diretory)
 
-            # Salva os dados JSON em um arquivo local
             with open(self.save_path, "w", encoding="utf-8") as json_file:
                 json.dump(data, json_file, ensure_ascii=False, indent=4)
 
